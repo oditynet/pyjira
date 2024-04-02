@@ -4,6 +4,8 @@
 python jira.py -h 
 ```
 
+<img src="https://github.com/oditynet/pyjira/blob/main/jira.png" title="example" width="700" />
+
 build binary:
 
 ```
