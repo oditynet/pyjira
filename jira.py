@@ -28,6 +28,19 @@ def get_tasks_list(db):
         for i in res:
             n1,n2,n3,n4,n5 = i
             print ("{:<40} {:<20} {:<40} {:<15} {:<15}".format(n1,n2,n3,n4,n5))
+def get_tasks_data(db):
+    res = db.execute('SELECT * FROM tasks')
+    res = res.fetchall()
+    #print(res)
+    if res is not None:
+        print("Даты:")
+        print ("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format('Название проекта','Исполнитель','Описание','Статус', 'Дата окончания','Просрочили'))
+        for i in res:
+            n1,n2,n3,n4,n5 = i
+            now = datetime.now()
+            date1 = datetime.strptime(n5, '%Y-%m-%d')
+            delta=date1-now      
+            print("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format(n1,n2,n3,n4,n5,delta.days))
 
 
 def get_user_list(db):
@@ -55,16 +68,24 @@ def get_task_desc(db,taskname):
 def edit_task(con,db,taskname,arg): #connection,dbtask,act1, act2
     res = db.execute('SELECT name FROM tasks WHERE name=?',(taskname,))
     res = res.fetchone()
-    #print(arg)
     if res is not None:
         print("Изменили в задаче:")
         arg1,arg2 = arg.split("=")
+        if arg1 == 'owner':
+            res = db.execute('SELECT name FROM users WHERE name=?',(arg2,))
+            res = res.fetchone()
+            if res is None:
+                print('Пользователя не существует')
+                return
         print(arg1,arg2,taskname)
         if arg1 is not None and arg2 is not None:
             values = {"arg1": arg1}
             sql="UPDATE tasks SET {arg1}=? WHERE name=?".format(**values) 
-            print(sql)
+            #print(sql)
             db.execute(sql,(arg2,taskname))  
+            con.commit()
+
+            db.execute('UPDATE users SET task=? WHERE name=?', (taskname,arg2))  
             con.commit()
             print('Задачу обновил')
         
@@ -144,6 +165,12 @@ def add_user(con,db,argv):
 
 
 def main(argv, argc):
+    if argc <= 1:
+        connection = sqlite3.connect('jira.db',check_same_thread=False)
+        dbtask = connection.cursor()
+        get_tasks_data(dbtask)
+        connection.close()
+        return
     if argv[1] == '--help' or argv[1] == '-h': #get
         help()
         return
