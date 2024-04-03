@@ -1,4 +1,4 @@
-#version: 0.1.1
+#version: 0.1.2
 #owner: oditynet
 
 from datetime import datetime
@@ -17,8 +17,40 @@ def help():
     print("python jira.py a t 'выдать комп' '' 'выделить стол и комп, ноут' new 04-04-2024")
     print("python jira.py g u")
     print("python jira.py g u test")
+    print("python jira.py d k")
     print("python jira.py e t 'отсобеседовать' status=work")
     print("python jira.py d u test")
+#-------------------------------------------------------------------------------------------------------------------------------
+def get_katban(db): #new,progress,done
+    res = db.execute('SELECT name,status FROM tasks')
+    n = res.fetchall()
+    nl=[]
+    pl=[]
+    fl=[]
+    if n is not None:
+        for i,j in n:
+            if j == "new":
+                nl.append(i)
+            if j == "progress":
+                pl.append(i)
+            if j == "done":
+                fl.append(i)
+        max = len(nl);
+        if (len(pl) > len(nl)):
+            max = len(pl);
+        if (len(fl) > max):
+            max = len(fl);
+        for i in range(len(nl),max):
+            nl.append('')
+        for i in range(len(pl),max):
+            pl.append('')
+        for i in range(len(fl),max):
+            fl.append('')
+        print ("{:35}  {:35}  {:35}".format('Новый','В работе','Завершен'))
+        print("_______________________________________________________________________________________________________________")
+        for i in range(0,max):
+            print ("{:<35} {:<35} {:<35}".format(nl[i],pl[i],fl[i]))              
+
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_tasks_list(db):
     res = db.execute('SELECT * FROM tasks')
@@ -243,7 +275,7 @@ def main(argv, argc):
     if argv[1] == '--help' or argv[1] == '-h': #get
         help()
         return
-    if argc < 3:
+    if argc < 3 and argv[2] != 'k':
         return
     global act,act1,act2
     #print(argv[2],argv[2],argv[3])
@@ -257,6 +289,8 @@ def main(argv, argc):
         act1 = 't'
         if argc >= 3 + 1: # get task name desc
             act2 = argv[3]
+    if argv[2] == 'k': #task
+        act1 = 'k'
     if argv[2] == 'u': #user
         act1 = 'u'
         if argc == 3 + 1: # get task name desc
@@ -293,6 +327,8 @@ def main(argv, argc):
         add_tasks(connection,dbtask,argv)
     if act == 'a' and act1 == 'u' and argc > 3:  
         add_user(connection,dbtask,argv)
+    if act == 'g' and act1 == 'k': 
+            get_katban(dbtask)
     if act == 'g' and act1 == 't': 
         if act2 != "":
             get_task_desc(dbtask,act2)
