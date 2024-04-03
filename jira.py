@@ -6,10 +6,13 @@ import sqlite3
 import sys
 import arrow
 from colorama import Fore, Back, Style
+import getpass
+import hashlib
 
 act = ""
 act1 = ""
 act2 = ""
+whoami = ''
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -57,7 +60,7 @@ def get_katban(db): #new,progress,done
             pl.append('')
         for i in range(len(fl),max):
             fl.append('')
-        print ("   {:35}  {:35}        {:35}".format('Новый',Fore.RED + 'В работе'+Style.RESET_ALL,Fore.GREEN +'Завершен'+Style.RESET_ALL))
+        print ("   {:35}  {:35}      {:35}".format('Новый',Fore.RED + 'В работе'+Style.RESET_ALL,Fore.GREEN +'Завершен'+Style.RESET_ALL))
         #print("_______________________________________________________________________________________________________________")
         for i in range(0,max):
             #print(f"{bcolors.WARNING}Warning: No active frommets remain. Continue?{bcolors.ENDC}")
@@ -98,7 +101,7 @@ def get_user_list(db):
         print("Пользователи:")
         print ("{:<20} {:<40}".format('Исполнитель','Название проекта'))
         for i in res:
-            n1,n2 = i
+            n1,n2,n3 = i
             print ("{:<20} {:<40}".format(n1,n2))
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_task_desc(db,taskname):
@@ -119,7 +122,7 @@ def edit_task(con,db,taskname,arg): #connection,dbtask,act1, act2
     res = res.fetchone()
     #print(res)
     #if res is not None:
-    print(f"Изменили в задаче '{taskname}'")
+    
     arg1,arg2 = arg.split("=")
     #print(arg1,arg2)
     if arg1 == 'owner':
@@ -132,11 +135,14 @@ def edit_task(con,db,taskname,arg): #connection,dbtask,act1, act2
     #print(arg1,arg2,taskname)
     if arg1 is not None and arg2 is not None:
         values = {"arg1": arg1}
+        if arg1 == "status" and arg2 == "done" and whoami != "admin":
+            print("Только админ может сменить статус")
+            return 0
         sql="UPDATE tasks SET {arg1}=? WHERE name=?".format(**values) 
         #print(sql)
         db.execute(sql,(arg2,taskname))  
         con.commit()
-
+        print(f"Изменили в задаче '{taskname}'")
         db.execute('UPDATE users SET task=? WHERE name=?', (taskname,arg2))  
         con.commit()
         print('Задачу обновил')
@@ -249,8 +255,7 @@ def delete_task(con,db,taskname):
 def delete_user(con,db,username):
     res = db.execute('SELECT name FROM users WHERE name=?',(username,))
     res = res.fetchall()
-    #print(res,taskname)
-    if res is not None:
+    if len(res) >0:
         res = db.execute('SELECT task FROM users WHERE name=?',(username,))
         res = res.fetchall()
        # print(res)
@@ -260,7 +265,7 @@ def delete_user(con,db,username):
                 #print(i+"=I")
                 db.execute('UPDATE tasks SET owner=? WHERE name=?',('',i))   
                 con.commit()
-                print(f'У задачи {i} удалил исполнителя')
+                print(f'У задачи "{i}" удалил исполнителя')
         db.execute('DELETE FROM users  WHERE name=?',(username,))
         con.commit()
 
@@ -273,8 +278,10 @@ def add_user(con,db,argv):
     if tmp_user is not None:
         print(f"Пользователь '{argv[3]}' существует")
         return
+    password = getpass.getpass()
+    hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
 
-    db.execute('INSERT INTO users (name ,task) VALUES (?, "")', (argv[3],))
+    db.execute('INSERT INTO users (name ,task,pass) VALUES (?, "",?)', (argv[3],hash))
     con.commit() 
     print(f"Добавил пользователя {argv[3]}")
 #-------------------------------------------------------------------------------------------------------------------------------
@@ -288,6 +295,19 @@ def main(argv, argc):
     if argv[1] == '--help' or argv[1] == '-h': #get
         help()
         return
+    connection = sqlite3.connect('jira.db',check_same_thread=False)
+    dbtask = connection.cursor()
+    
+    password = getpass.getpass()
+    hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    res = dbtask.execute('SELECT name FROM users WHERE pass=?',(hash,))
+    res = res.fetchone()
+    if res is None:
+        print("Ошибка авторизации")
+        return 0
+    global whoami
+    whoami=res[0]
+    print("Приветствую '"+whoami+"'")
     if argc < 3 and argv[2] != 'k':
         return
     global act,act1,act2
@@ -316,13 +336,12 @@ def main(argv, argc):
     if act == '' or act1 == '':
         exit
     #print(act,act1,act2)
-    connection = sqlite3.connect('jira.db',check_same_thread=False)
-    dbtask = connection.cursor()
     dbtask.execute('''
     CREATE TABLE IF NOT EXISTS users
     (
         name TEXT,
         task TEXT   ,
+        pass TEXT   ,
         PRIMARY KEY ( name )
     );
       ''')
