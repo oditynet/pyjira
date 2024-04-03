@@ -40,9 +40,9 @@ def get_tasks_data(db):
         print ("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format('Название проекта','Исполнитель','Описание','Статус', 'Дата окончания','Просрочили'))
         for i in res:
             n1,n2,n3,n4,n5 = i
-            now = datetime.now()
-            date1 = datetime.strptime(n5, '%Y-%m-%d')
-            delta=date1-now      
+            now = datetime.now().date()
+            date1 = datetime.strptime(n5, '%Y-%m-%d').date()
+            delta=date1-now     
             print("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format(n1,n2,n3,n4,n5,delta.days))
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_user_list(db):
@@ -159,7 +159,7 @@ def add_tasks(con,db,argv):
            desc="'"+argv[5]+"'"
     now = arrow.now()
     date=now.shift(days=int(argv[7])).date()
-    print(argv[3],argv[4],desc,argv[6],date)
+    #print(argv[3],argv[4],desc,argv[6],date)
     db.execute('INSERT INTO tasks (name ,owner, text, status, datelast) VALUES (?, ?, ?, ?, ?)', (argv[3],argv[4],desc,argv[6],date))
     con.commit() 
     print(f"Добавил задачу '{argv[3]}'")
@@ -181,7 +181,7 @@ def delete_task(con,db,taskname):
 
     if res is not None:
         usertasks,user=find_task_at_alluser(db,taskname)
-        print(usertasks,user)
+        #print(usertasks,user)
         if user is not None:
             usertasks = usertasks.replace(taskname,'',1)
             usertasks = usertasks.replace(',,',',')
@@ -189,8 +189,8 @@ def delete_task(con,db,taskname):
                 usertasks = usertasks.replace(',','',1)
             if usertasks[-1] == ',':
                 usertasks = usertasks[:-1]
-            print(usertasks,user)
-            print(usertasks.find(','),len(usertasks))
+            #print(usertasks,user)
+            #print(usertasks.find(','),len(usertasks))
         
             db.execute('UPDATE users SET task=? WHERE name=?', (usertasks,user))  
             con.commit()
@@ -208,11 +208,11 @@ def delete_user(con,db,username):
     if res is not None:
         res = db.execute('SELECT task FROM users WHERE name=?',(username,))
         res = res.fetchall()
-        print(res)
+       # print(res)
         for listtask in res:
-            print(listtask[0])
+            #print(listtask[0])
             for i in listtask[0].split(','):
-                print(i+"=I")
+                #print(i+"=I")
                 db.execute('UPDATE tasks SET owner=? WHERE name=?',('',i))   
                 con.commit()
                 print(f'У задачи {i} удалил исполнителя')
