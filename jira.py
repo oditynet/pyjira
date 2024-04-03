@@ -5,11 +5,22 @@ from datetime import datetime
 import sqlite3
 import sys
 import arrow
-
+from colorama import Fore, Back, Style
 
 act = ""
 act1 = ""
 act2 = ""
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 #-------------------------------------------------------------------------------------------------------------------------------
 def help():
     print("python jira.py command table arg")
@@ -46,10 +57,12 @@ def get_katban(db): #new,progress,done
             pl.append('')
         for i in range(len(fl),max):
             fl.append('')
-        print ("{:35}  {:35}  {:35}".format('Новый','В работе','Завершен'))
-        print("_______________________________________________________________________________________________________________")
+        print ("   {:35}  {:35}        {:35}".format('Новый',Fore.RED + 'В работе'+Style.RESET_ALL,Fore.GREEN +'Завершен'+Style.RESET_ALL))
+        #print("_______________________________________________________________________________________________________________")
         for i in range(0,max):
-            print ("{:<35} {:<35} {:<35}".format(nl[i],pl[i],fl[i]))              
+            #print(f"{bcolors.WARNING}Warning: No active frommets remain. Continue?{bcolors.ENDC}")
+
+            print ("{:35} {:35} {:<35}".format(nl[i],pl[i],fl[i]))              
 
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_tasks_list(db):
