@@ -19,7 +19,7 @@ whoami = ''
 def help():
     print("python jira.py command table arg")
     print("python jira.py a/g/e/d u/t")
-    print("python jira.py a t 'выдать комп' '' 'выделить стол и комп, ноут' new 04-04-2024")
+    print("python jira.py a t 'выдать комп' '' 'выделить стол и комп, ноут' new -1 4")
     print("python jira.py g u")
     print("python jira.py g u test")
     print("python jira.py d k")
@@ -77,7 +77,7 @@ def get_katban(db): #new,progress,done
                 max = len(fl);
                 #print(max)
                 #print("@")
-        print(max,len(nl),len(pl),len(fl))
+        print("")
         for i in range(len(nl),max):
             nl.append(['',''])
         for i in range(len(pl),max):
