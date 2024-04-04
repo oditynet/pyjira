@@ -1,4 +1,4 @@
-#version: 0.1.2
+#version: 0.2
 #owner: oditynet
 
 from datetime import datetime
@@ -8,21 +8,12 @@ import arrow
 from colorama import Fore, Back, Style
 import getpass
 import hashlib
+path = "/home/odity/bin/pyjira/jira.db"
 
 act = ""
 act1 = ""
 act2 = ""
 whoami = ''
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 #-------------------------------------------------------------------------------------------------------------------------------
 def help():
@@ -35,37 +26,68 @@ def help():
     print("python jira.py e t 'отсобеседовать' status=work")
     print("python jira.py d u test")
 #-------------------------------------------------------------------------------------------------------------------------------
+def print_prior(t,p): # -2, -1, 0, 1, 2
+    #BLACK           = 30
+    #RED             = 31
+    #GREEN           = 32
+    #YELLOW          = 33
+    #BLUE            = 34
+    #MAGENTA         = 35
+    #CYAN            = 36
+    #WHITE           = 37
+    #RESET     
+    if p == -2:
+        return Fore.GREEN +str(t)+Style.RESET_ALL
+    if p == -1:
+        return Fore.CYAN +str(t)+Style.RESET_ALL
+    if p == 0:
+        return Fore.WHITE +str(t)+Style.RESET_ALL
+    if p == 1:
+        return Fore.YELLOW +str(t)+Style.RESET_ALL
+    if p == 2:
+        return Fore.RED +str(t)+Style.RESET_ALL
+    if p == '' or p == None:
+        return ''
+#-------------------------------------------------------------------------------------------------------------------------------
 def get_katban(db): #new,progress,done
-    res = db.execute('SELECT name,status FROM tasks')
+    res = db.execute('SELECT name,status,prior FROM tasks')
     n = res.fetchall()
     nl=[]
     pl=[]
     fl=[]
     if n is not None:
-        for i,j in n:
+        #print(n)
+        for i,j,p in n:
             if j == "new":
-                nl.append(i)
-            if j == "progress":
-                pl.append(i)
+                nl.append([i,p])
+            if j == "process":
+                pl.append([i,p])
             if j == "done":
-                fl.append(i)
+                fl.append([i,p])
+            
         max = len(nl);
-        if (len(pl) > len(nl)):
-            max = len(pl);
-        if (len(fl) > max):
-            max = len(fl);
+        if len(pl) !=0:
+            if (len(pl) > len(nl) ):
+                max = len(pl);
+                #print(max)
+        if len(fl) != 0:
+            if (len(fl) > max):
+                max = len(fl);
+                #print(max)
+                #print("@")
+        print(max,len(nl),len(pl),len(fl))
         for i in range(len(nl),max):
-            nl.append('')
+            nl.append(['',''])
         for i in range(len(pl),max):
-            pl.append('')
+            pl.append(['',''])
         for i in range(len(fl),max):
-            fl.append('')
-        print ("   {:35}  {:35}      {:35}".format('Новый',Fore.RED + 'В работе'+Style.RESET_ALL,Fore.GREEN +'Завершен'+Style.RESET_ALL))
+            fl.append(['',''])
+        #print(nl)
+        print ("{:<35} {:<35} {:<35}".format('Новый',Fore.YELLOW + 'В работе'+Style.RESET_ALL,Fore.GREEN +'Завершен'+Style.RESET_ALL))
         #print("_______________________________________________________________________________________________________________")
         for i in range(0,max):
-            #print(f"{bcolors.WARNING}Warning: No active frommets remain. Continue?{bcolors.ENDC}")
-
-            print ("{:35} {:35} {:<35}".format(nl[i],pl[i],fl[i]))              
+            #print(print_prior(nl[i][0],nl[i][1]),print_prior(pl[i][0],pl[i][1]),print_prior(fl[i][0],fl[i][1]))
+            print("{:<35} {:<35} {:<35}".format(print_prior(nl[i][0],nl[i][1]),print_prior(pl[i][0],pl[i][1]),print_prior(fl[i][0],fl[i][1])))              
 
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_tasks_list(db):
@@ -74,10 +96,10 @@ def get_tasks_list(db):
     #print(res)
     if res is not None:
         print("Задачи:")
-        print ("{:<35} {:<20} {:<40} {:<15} {:<15}".format('Название проекта(name)','Исполнитель(owner)','Описание(text)','Статус(status)', 'Дата окончания(datelast)'))
+        print ("{:<35} {:<20} {:<40} {:<15} {:<15} {:<15}".format('Название проекта(name)','Исполнитель(owner)','Описание(text)','Статус(status)', 'Приоритет(prior)', 'Дата окончания(datelast)'))
         for i in res:
-            n1,n2,n3,n4,n5 = i
-            print ("{:<40} {:<20} {:<40} {:<15} {:<15}".format(n1,n2,n3,n4,n5))
+            n1,n2,n3,n4,n5,n6 = i
+            print ("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format(n1,n2,n3,n4,n5,n6))
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_tasks_data(db):
     res = db.execute('SELECT * FROM tasks')
@@ -85,20 +107,20 @@ def get_tasks_data(db):
     #print(res)
     if res is not None:
         print("Даты:")
-        print ("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format('Название проекта','Исполнитель','Описание','Статус', 'Дата окончания','Просрочили'))
+        print ("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15} {:<15}".format('Название проекта','Исполнитель','Описание','Статус', 'Приоритет', 'Дата окончания','Просрочили'))
         for i in res:
-            n1,n2,n3,n4,n5 = i
+            n1,n2,n3,n4,n5,n6 = i
             now = datetime.now().date()
-            date1 = datetime.strptime(n5, '%Y-%m-%d').date()
+            date1 = datetime.strptime(n6, '%Y-%m-%d').date()
             delta=date1-now     
-            print("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15}".format(n1,n2,n3,n4,n5,delta.days))
+            print("{:<40} {:<20} {:<40} {:<15} {:<15} {:<15} {:<15}".format(n1,n2,n3,n4,n5,n6,delta.days))
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_user_list(db):
     res = db.execute('SELECT * FROM users')
     res = res.fetchall()
     #print(res)
     if res is not None:
-        print("Пользователи:")
+        print("")
         print ("{:<20} {:<40}".format('Исполнитель','Название проекта'))
         for i in res:
             n1,n2,n3 = i
@@ -209,9 +231,9 @@ def add_tasks(con,db,argv):
     if argv[5].find(" ") > 0:
            desc="'"+argv[5]+"'"
     now = arrow.now()
-    date=now.shift(days=int(argv[7])).date()
+    date=now.shift(days=int(argv[8])).date()
     #print(argv[3],argv[4],desc,argv[6],date)
-    db.execute('INSERT INTO tasks (name ,owner, text, status, datelast) VALUES (?, ?, ?, ?, ?)', (argv[3],argv[4],desc,argv[6],date))
+    db.execute('INSERT INTO tasks (name ,owner, text, status, prior, datelast) VALUES (?, ?, ?, ?, ?, ?)', (argv[3],argv[4],desc,argv[6],argv[7],date))
     con.commit() 
     print(f"Добавил задачу '{argv[3]}'")
     tmp_user = get_user(db,argv[4])
@@ -286,20 +308,41 @@ def add_user(con,db,argv):
     print(f"Добавил пользователя {argv[3]}")
 #-------------------------------------------------------------------------------------------------------------------------------
 def main(argv, argc):
+    if argc > 1:
+        if (argv[1] == '--help' or argv[1] == '-h'): 
+            help()
+            return
+    print("DB:"+path)
+    connection = sqlite3.connect(path,check_same_thread=False)
+    dbtask = connection.cursor()
+    dbtask.execute('''
+    CREATE TABLE IF NOT EXISTS users
+    (
+        name TEXT,
+        task TEXT   ,
+        pass TEXT   ,
+        PRIMARY KEY ( name )
+    );
+      ''')
+    dbtask.execute('''
+    CREATE TABLE IF NOT EXISTS tasks
+    (
+        name TEXT PRIMARY KEY,
+        owner TEXT,
+        text TEXT,               
+        status INTEGER,
+        prior INTEGER,
+        datelast timestamp
+    );
+    ''')
     if argc <= 1:
-        connection = sqlite3.connect('jira.db',check_same_thread=False)
-        dbtask = connection.cursor()
         get_tasks_data(dbtask)
         connection.close()
         return
-    if argv[1] == '--help' or argv[1] == '-h': #get
-        help()
-        return
-    connection = sqlite3.connect('jira.db',check_same_thread=False)
-    dbtask = connection.cursor()
-    
+
     password = getpass.getpass()
     hash = hashlib.sha256(password.encode('utf-8')).hexdigest()
+    #print(hash)
     res = dbtask.execute('SELECT name FROM users WHERE pass=?',(hash,))
     res = res.fetchone()
     if res is None:
@@ -336,25 +379,7 @@ def main(argv, argc):
     if act == '' or act1 == '':
         exit
     #print(act,act1,act2)
-    dbtask.execute('''
-    CREATE TABLE IF NOT EXISTS users
-    (
-        name TEXT,
-        task TEXT   ,
-        pass TEXT   ,
-        PRIMARY KEY ( name )
-    );
-      ''')
-    dbtask.execute('''
-    CREATE TABLE IF NOT EXISTS tasks
-    (
-        name TEXT PRIMARY KEY,
-        owner TEXT,
-        text TEXT,               
-        status INTEGER,
-        datelast timestamp
-    );
-    ''')
+    
     if act == 'a' and act1 == 't':  #a t t3 user1 "texts  s" new 02.04.2024
         add_tasks(connection,dbtask,argv)
     if act == 'a' and act1 == 'u' and argc > 3:  
