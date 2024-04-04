@@ -25,6 +25,8 @@ def help():
     print("python jira.py d k")
     print("python jira.py e t 'отсобеседовать' status=work")
     print("python jira.py d u test")
+    print("prior: -2, -1, 0, 1, 2 ")
+    print("status: new, process, done ")
 #-------------------------------------------------------------------------------------------------------------------------------
 def print_prior(t,p): # -2, -1, 0, 1, 2
     #BLACK           = 30
@@ -87,7 +89,7 @@ def get_katban(db): #new,progress,done
         #print("_______________________________________________________________________________________________________________")
         for i in range(0,max):
             #print(print_prior(nl[i][0],nl[i][1]),print_prior(pl[i][0],pl[i][1]),print_prior(fl[i][0],fl[i][1]))
-            print("{:<35} {:<35} {:<35}".format(print_prior(nl[i][0],nl[i][1]),print_prior(pl[i][0],pl[i][1]),print_prior(fl[i][0],fl[i][1])))              
+            print("'{:<35}' '{:<35}' '{:<35}'".format(print_prior(nl[i][0],nl[i][1]),print_prior(pl[i][0],pl[i][1]),print_prior(fl[i][0],fl[i][1])))              
 
 #-------------------------------------------------------------------------------------------------------------------------------
 def get_tasks_list(db):
